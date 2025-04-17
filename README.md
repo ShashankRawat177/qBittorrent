@@ -1,44 +1,101 @@
-qBittorrent - A BitTorrent client in Qt
-------------------------------------------
+# qBittorrent Analysis Project
 
-[![GitHub Actions CI Status](https://github.com/qbittorrent/qBittorrent/actions/workflows/ci_ubuntu.yaml/badge.svg)](https://github.com/qbittorrent/qBittorrent/actions)
-[![Coverity Status](https://scan.coverity.com/projects/5494/badge.svg)](https://scan.coverity.com/projects/5494)
-********************************
-### Description:
-qBittorrent is a bittorrent client programmed in C++ / Qt that uses
-libtorrent (sometimes called libtorrent-rasterbar) by Arvid Norberg.
+*Team:* Dynamic Programmers  
+- Anshuman Bhagat – 202301170 (G2)  
+- Shashank Rawat – 202401183 (G3)  
+- Shreyav Kumar – 202401206 (G3)
 
-It aims to be a good alternative to all other bittorrent clients
-out there. qBittorrent is fast, stable and provides unicode
-support as well as many features.
+---
 
-The free [IP to Country Lite database](https://db-ip.com/db/download/ip-to-country-lite) by [DB-IP](https://db-ip.com/) is used for resolving the countries of peers. The database is licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+## Project Objective
+This project provides a detailed analysis of *qBittorrent*, an open‑source, cross‑platform BitTorrent client. As part of our coursework, we have:
+- Cloned and explored the qBittorrent codebase.  
+- Investigated its architecture, data structures, and key modules.  
+- Compiled implementation trade‑offs and design decisions.  
 
-### Installation:
+This README is designed for our project invigilator to easily understand our work, project structure, and findings, and to satisfy the academic evaluation criteria.
 
-Refer to the [INSTALL](INSTALL) file.
+## Background
+qBittorrent is a *peer‑to‑peer (P2P)* file sharing application based on the BitTorrent protocol. It enables decentralized downloading and uploading of files by splitting them into pieces and sharing across multiple peers.
 
-### Public key:
-Starting from v3.3.4 all source tarballs and binaries are signed.<br />
-The key currently used is 4096R/[5B7CC9A2](https://pgp.mit.edu/pks/lookup?op=get&search=0x6E4A2D025B7CC9A2) with fingerprint `D8F3DA77AAC6741053599C136E4A2D025B7CC9A2`.<br />
-You can also download it from [here](https://github.com/qbittorrent/qBittorrent/raw/master/5B7CC9A2.asc).<br />
-**PREVIOUSLY** the following key was used to sign the v3.3.4 source tarballs and v3.3.4 Windows installer **only**: 4096R/[520EC6F6](https://pgp.mit.edu/pks/lookup?op=get&search=0xA1ACCAE4520EC6F6) with fingerprint `F4A5FD201B117B1C2AB590E2A1ACCAE4520EC6F6`.<br />
+## Key Features
+- *Torrent Support:* Download from .torrent files or magnet links.  
+- *Bandwidth Control:* Schedule/upload and download rate limits.  
+- *Sequential Downloading:* Fetch pieces in order for previewing.  
+- *IP Filtering:* Block peers by IP address or range.  
+- *RSS Reader:* Automatic episode downloads via filter rules.  
+- *Built‑in Search Engine:* (Optional) Plugins for popular torrent indexers.  
+- *Web UI:* Remote control through a browser interface.  
+- *Encryption:* Message Stream Encryption (MSE) and TLS support.  
+- *Tracker & Peer Management:* Add/remove trackers; view peer stats.
 
-### Misc:
-For more information please visit:
-https://www.qbittorrent.org
+## System Architecture
+qBittorrent’s code is organized into several major modules:
 
-or our wiki here:
-https://wiki.qbittorrent.org
+1. *Core Module (C++ / libtorrent)*
+   - Manages torrent sessions via [libtorrent] library.  
+   - Handles piece distribution, hashing, and peer connections.  
 
-Use the forum for troubleshooting before reporting bugs:
-https://forum.qbittorrent.org
+2. *GUI Module (Qt / C++)*
+   - Built with Qt for a responsive, cross‑platform interface.  
+   - Integrates with core via well‑defined signal/slot mechanisms.
 
-Please report any bug (or feature request) to:
-https://bugs.qbittorrent.org
+3. *Web UI (C++ backend + HTML/JS frontend)*
+   - Exposes a RESTful API for remote torrent management.  
+   - Designed for headless operation on servers or NAS devices.
 
-Official IRC channel:
-[#qbittorrent on irc.libera.chat](ircs://irc.libera.chat:6697/qbittorrent)
+4. *Search Engine Plugin System (Python)*
+   - Extensible architecture allowing new indexer plugins.  
+   - Parses HTML or JSON responses to present search results.
 
-------------------------------------------
-sledgehammer999 \<sledgehammer999@qbittorrent.org\>
+5. *Queue & Filter Manager*
+   - Implements download priorities, category grouping, and queue logic.
+
+## Data Structures
+- *QMap / std::map*: Map torrent IDs to session and peer objects.  
+- *QList / std::vector*: Store lists of active torrents, peers, and UI elements.  
+- *QQueue*: FIFO queues for pending network packets and tasks.  
+- **Custom Classes (e.g., TorrentInfo): Encapsulate metadata such as file lists, piece hashes, and tracker URLs.
+
+## Design Approaches & Trade‑offs
+- *Modularity:* Separation of GUI and core logic via libtorrent allows independent testing and maintenance.  
+- *Asynchronous Programming:* Qt’s signal‑slot and libtorrent’s callbacks manage thousands of peers without blocking the UI.  
+- *Container Choices:*
+  - Qt containers integrate smoothly with Qt types (e.g., QVariant) but can incur slight overhead.  
+  - STL containers (std::vector, std::map) are used in compute‑intensive paths for micro‑optimizations.  
+- *Performance vs. Maintainability:*
+  - Signal‑slot mechanisms improve readability at the cost of minor runtime overhead.  
+  - Clear module interfaces add some complexity but greatly enhance code clarity and testability.
+- *Memory vs. Speed:*
+  - Balanced use of maps and simple arrays to minimize allocation overhead while providing fast lookups.
+
+## Dependencies & Setup
+1. *Qt* (version 5.x or 6.x)  
+2. *libtorrent* (v1.2.x or later)  
+3. *Python 3.x* (for search plugins)  
+4. *C++17* or newer compiler  
+
+bash
+# Example build steps
+git clone https://github.com/qbittorrent/qBittorrent.git
+cd qBittorrent
+mkdir build && cd build
+cmake .. -DUSE_SYSTEM_LIBTORRENT=ON
+make -j$(nproc)
+sudo make install
+
+
+## Usage
+1. Launch the application (qbittorrent).  
+2. Add a .torrent file or paste a magnet link.  
+3. Monitor download progress in the main window.  
+4. Access Web UI at http://localhost:8080 (default port).  
+
+## Learning Outcomes
+- Gained insight into a real‑world P2P application architecture.  
+- Understood asynchronous network programming with Qt and libtorrent.  
+- Analyzed container choices and performance trade‑offs in C++/Qt.  
+
+---
+
+Prepared by Dynamic Programmers for academic evaluation.
